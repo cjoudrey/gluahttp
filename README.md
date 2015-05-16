@@ -1,5 +1,7 @@
 # gluahttp
 
+[![](https://travis-ci.org/cjoudrey/gluahttp.svg)](https://travis-ci.org/cjoudrey/gluahttp)
+
 gluahttp provides an easy way to make HTTP requests from within [GopherLua](https://github.com/yuin/gopher-lua).
 
 ## Installation
