@@ -102,7 +102,46 @@ text/plain; charset=utf-8
 	}
 }
 
-func TestRequestGetAdvanced(t *testing.T) {
+func TestRequestPostForm(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			body, status, headers = http.request("post", "http://` + listener.Addr().String() + `", {
+				form="username=bob&password=secret"
+			})
+
+			print(body)
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `POST / HTTP/1.1
+Host: ` + listener.Addr().String() + `
+Transfer-Encoding: chunked
+Accept-Encoding: gzip
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Go 1.1 package http
+
+1c
+username=bob&password=secret
+0
+
+
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
+func TestRequestGetHeaders(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
@@ -115,9 +154,6 @@ func TestRequestGetAdvanced(t *testing.T) {
 		if err := L.DoString(`
 			local http = require("http")
 			body, status, headers = http.request("get", "http://` + listener.Addr().String() + `", {
-				query={
-					page=1
-				},
 				headers={
 					Something="Test"
 				}
@@ -129,7 +165,7 @@ func TestRequestGetAdvanced(t *testing.T) {
 		}
 	})
 
-	if expected := `GET /?page=1 HTTP/1.1
+	if expected := `GET / HTTP/1.1
 Host: ` + listener.Addr().String() + `
 Accept-Encoding: gzip
 Something: Test
@@ -141,7 +177,7 @@ User-Agent: Go 1.1 package http
 	}
 }
 
-func TestRequestGetRawQuery(t *testing.T) {
+func TestRequestGetQuery(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 

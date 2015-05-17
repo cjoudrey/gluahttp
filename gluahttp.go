@@ -38,13 +38,15 @@ func request(L *lua.LState) int {
 		case lua.LString:
 			req.URL.RawQuery = reqQuery.String()
 			break
+		}
 
-		case *lua.LTable:
-			q := req.URL.Query()
-			reqQuery.ForEach(func(key lua.LValue, value lua.LValue) {
-				q.Add(key.String(), value.String())
-			})
-			req.URL.RawQuery = q.Encode()
+		switch reqForm := options.RawGet(lua.LString("form")).(type) {
+		case *lua.LNilType:
+			break
+
+		case lua.LString:
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.Body = ioutil.NopCloser(strings.NewReader(reqForm.String()))
 			break
 		}
 	}
