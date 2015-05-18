@@ -65,7 +65,7 @@ nil
 	}
 }
 
-func TestRequestGetSimple(t *testing.T) {
+func TestRequestGet(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
@@ -203,6 +203,162 @@ func TestRequestGetQuery(t *testing.T) {
 Host: ` + listener.Addr().String() + `
 Accept-Encoding: gzip
 User-Agent: Go 1.1 package http
+
+
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
+func TestGet(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			body, status, headers = http.get("http://` + listener.Addr().String() + `", {
+				query="page=1"
+			})
+
+			print(body)
+			print(status)
+			print(headers["Content-Length"])
+			print(headers["Content-Type"])
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `GET /?page=1 HTTP/1.1
+Host: ` + listener.Addr().String() + `
+Accept-Encoding: gzip
+User-Agent: Go 1.1 package http
+
+
+200
+104
+text/plain; charset=utf-8
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
+func TestPost(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			body, status, headers = http.post("http://` + listener.Addr().String() + `", {
+				form="username=bob&password=secret"
+			})
+
+			print(body)
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `POST / HTTP/1.1
+Host: ` + listener.Addr().String() + `
+Transfer-Encoding: chunked
+Accept-Encoding: gzip
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Go 1.1 package http
+
+1c
+username=bob&password=secret
+0
+
+
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
+func TestPatch(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			body, status, headers = http.patch("http://` + listener.Addr().String() + `", {
+				form="username=bob&password=secret"
+			})
+
+			print(body)
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `PATCH / HTTP/1.1
+Host: ` + listener.Addr().String() + `
+Transfer-Encoding: chunked
+Accept-Encoding: gzip
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Go 1.1 package http
+
+1c
+username=bob&password=secret
+0
+
+
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
+func TestPut(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			body, status, headers = http.put("http://` + listener.Addr().String() + `", {
+				form="username=bob&password=secret"
+			})
+
+			print(body)
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `PUT / HTTP/1.1
+Host: ` + listener.Addr().String() + `
+Transfer-Encoding: chunked
+Accept-Encoding: gzip
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Go 1.1 package http
+
+1c
+username=bob&password=secret
+0
 
 
 `; expected != out {

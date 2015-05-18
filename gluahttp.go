@@ -13,18 +13,42 @@ func Loader(L *lua.LState) int {
 }
 
 var exports = map[string]lua.LGFunction{
+	"get": get,
+	"patch": patch,
+	"post": post,
+	"put": put,
 	"request": request,
 }
 
+func get(L *lua.LState) int {
+	return doRequest(L, "get", L.ToString(1), L.ToTable(2))
+}
+
+func patch(L *lua.LState) int {
+	return doRequest(L, "patch", L.ToString(1), L.ToTable(2))
+}
+
+func post(L *lua.LState) int {
+	return doRequest(L, "post", L.ToString(1), L.ToTable(2))
+}
+
+func put(L *lua.LState) int {
+	return doRequest(L, "put", L.ToString(1), L.ToTable(2))
+}
+
 func request(L *lua.LState) int {
-	req, err := http.NewRequest(strings.ToUpper(L.ToString(1)), L.ToString(2), nil)
+	return doRequest(L, L.ToString(1), L.ToString(2), L.ToTable(3))
+}
+
+func doRequest(L *lua.LState, method string, url string, options *lua.LTable) int {
+	req, err := http.NewRequest(strings.ToUpper(method), url, nil)
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(fmt.Sprintf("%s", err)))
 		return 2
 	}
 
-	if options := L.ToTable(3); options != nil {
+	if options != nil {
 		if reqHeaders, ok := options.RawGet(lua.LString("headers")).(*lua.LTable); ok {
 			reqHeaders.ForEach(func(key lua.LValue, value lua.LValue) {
 				req.Header.Set(key.String(), value.String())
