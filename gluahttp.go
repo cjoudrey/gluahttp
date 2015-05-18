@@ -81,29 +81,32 @@ func doRequest(L *lua.LState, method string, url string, options *lua.LTable) in
 	}
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(fmt.Sprintf("%s", err)))
 		return 2
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(fmt.Sprintf("%s", err)))
 		return 2
 	}
-
-	L.Push(lua.LString(body))
-	L.Push(lua.LNumber(resp.StatusCode))
 
 	headers := L.NewTable()
-	for key, _ := range resp.Header {
-		headers.RawSet(lua.LString(key), lua.LString(resp.Header.Get(key)))
+	for key, _ := range res.Header {
+		headers.RawSetString(key, lua.LString(res.Header.Get(key)))
 	}
-	L.Push(headers)
 
-	return 3
+	response := L.NewTable()
+	response.RawSetString("body", lua.LString(body))
+	response.RawSetString("headers", headers)
+	response.RawSetString("status_code", lua.LNumber(res.StatusCode))
+
+	L.Push(response)
+
+	return 1
 }

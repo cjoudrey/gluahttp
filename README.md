@@ -15,7 +15,7 @@ go get github.com/cjoudrey/gluahttp
 ```lua
 local http = require("http")
 
-body, status, headers = http.request("GET", "http://example.com", {
+response, error = http.request("GET", "http://example.com", {
   query="page=1"
   headers={
     Accept="*/*"
@@ -27,113 +27,137 @@ body, status, headers = http.request("GET", "http://example.com", {
 
 ### http.get(url [, options])
 
-- `url`: A `string` URL of the page to load.
-- `options`: A `table` with one or many of the following parameters:
- - `query`: Query string in the form of a `string`.
- - `headers`: `table` of additional headers to send with the request.
+**Attributes**
 
-Return:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| url     | String | URL of the resource to load |
+| options | Table  | Additional options |
 
-- `body`: A `string` containing the response body.
-- `status`: A `number` containing the HTTP status code.
-- `headers`: A `table` containing the response headers.
+**Options**
 
-In the event of an error, the return is as follows:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| query   | String | URL encoded query params |
+| headers | Table  | Additional headers to send with the request |
 
-- `nil`
-- `error`: A `string` containing the error message.
+**Returns**
+
+[http.response](#httpresponse) or (nil, error message)
 
 ### http.head(url [, options])
 
-- `url`: A `string` URL of the page to load.
-- `options`: A `table` with one or many of the following parameters:
- - `query`: Query string in the form of a `string`.
- - `headers`: `table` of additional headers to send with the request.
+**Attributes**
 
-Return:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| url     | String | URL of the resource to load |
+| options | Table  | Additional options |
 
-- `body`: A `string` containing the response body.
-- `status`: A `number` containing the HTTP status code.
-- `headers`: A `table` containing the response headers.
+**Options**
 
-In the event of an error, the return is as follows:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| query   | String | URL encoded query params |
+| headers | Table  | Additional headers to send with the request |
 
-- `nil`
-- `error`: A `string` containing the error message.
+**Returns**
+
+[http.response](#httpresponse) or (nil, error message)
 
 ### http.patch(url [, options])
 
-- `url`: A `string` URL of the page to load.
-- `options`: A `table` with one or many of the following parameters:
- - `query`: Query string in the form of a `string`.
- - `form`: `string` value of the request's body data and set's `Content-Type` to `application/x-www-form-urlencoded`.
- - `headers`: `table` of additional headers to send with the request.
+**Attributes**
 
-Return:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| url     | String | URL of the resource to load |
+| options | Table  | Additional options |
 
-- `body`: A `string` containing the response body.
-- `status`: A `number` containing the HTTP status code.
-- `headers`: A `table` containing the response headers.
+**Options**
 
-In the event of an error, the return is as follows:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| query   | String | URL encoded query params |
+| form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
+| headers | Table  | Additional headers to send with the request |
 
-- `nil`
-- `error`: A `string` containing the error message.
+**Returns**
+
+[http.response](#httpresponse) or (nil, error message)
 
 ### http.post(url [, options])
 
-- `url`: A `string` URL of the page to load.
-- `options`: A `table` with one or many of the following parameters:
- - `query`: Query string in the form of a `string`.
- - `form`: `string` value of the request's body data and set's `Content-Type` to `application/x-www-form-urlencoded`.
- - `headers`: `table` of additional headers to send with the request.
+**Attributes**
 
-Return:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| url     | String | URL of the resource to load |
+| options | Table  | Additional options |
 
-- `body`: A `string` containing the response body.
-- `status`: A `number` containing the HTTP status code.
-- `headers`: A `table` containing the response headers.
+**Options**
 
-In the event of an error, the return is as follows:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| query   | String | URL encoded query params |
+| form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
+| headers | Table  | Additional headers to send with the request |
 
-- `nil`
-- `error`: A `string` containing the error message.
+**Returns**
+
+[http.response](#httpresponse) or (nil, error message)
 
 ### http.put(url [, options])
 
-- `url`: A `string` URL of the page to load.
-- `options`: A `table` with one or many of the following parameters:
- - `query`: Query string in the form of a `string`.
- - `form`: `string` value of the request's body data and set's `Content-Type` to `application/x-www-form-urlencoded`.
- - `headers`: `table` of additional headers to send with the request.
+**Attributes**
 
-Return:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| url     | String | URL of the resource to load |
+| options | Table  | Additional options |
 
-- `body`: A `string` containing the response body.
-- `status`: A `number` containing the HTTP status code.
-- `headers`: A `table` containing the response headers.
+**Options**
 
-In the event of an error, the return is as follows:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| query   | String | URL encoded query params |
+| form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
+| headers | Table  | Additional headers to send with the request |
 
-- `nil`
-- `error`: A `string` containing the error message.
+**Returns**
+
+[http.response](#httpresponse) or (nil, error message)
 
 ### http.request(method, url [, options])
 
-- `method`: The HTTP request method.
-- `url`: A `string` URL of the page to load.
-- `options`: A `table` with one or many of the following parameters:
- - `query`: Query string in the form of a `string`.
- - `form`: `string` value of the request's body data and set's `Content-Type` to `application/x-www-form-urlencoded`.
- - `headers`: `table` of additional headers to send with the request.
+**Attributes**
 
-Return:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| method  | String | The HTTP request method |
+| url     | String | URL of the resource to load |
+| options | Table  | Additional options |
 
-- `body`: A `string` containing the response body.
-- `status`: A `number` containing the HTTP status code.
-- `headers`: A `table` containing the response headers.
+**Options**
 
-In the event of an error, the return is as follows:
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| query   | String | URL encoded query params |
+| form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
+| headers | Table  | Additional headers to send with the request |
 
-- `nil`
-- `error`: A `string` containing the error message.
+**Returns**
+
+[http.response](#httpresponse) or (nil, error message)
+
+### http.response
+
+The `http.response` table contains information about a completed HTTP request.
+
+**Attributes**
+
+| Name        | Type   | Description |
+| ----------- | ------ | ----------- |
+| body        | String | The HTTP response body |
+| headers     | Table  | The HTTP response headers |
+| status_code | Number | The HTTP response status code |

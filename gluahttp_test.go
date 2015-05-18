@@ -20,11 +20,10 @@ func TestRequestNoMethod(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.request()
+			response, error = http.request()
 
-			print(body)
-			print(status)
-			print(headers)
+			print(response)
+			print(error)
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -32,7 +31,6 @@ func TestRequestNoMethod(t *testing.T) {
 
 	if expected := `nil
 unsupported protocol scheme ""
-nil
 `; expected != out {
 		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
 	}
@@ -47,11 +45,10 @@ func TestRequestNoUrl(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.request("get")
+			response, error = http.request("get")
 
-			print(body)
-			print(status)
-			print(headers)
+			print(response)
+			print(error)
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -59,7 +56,6 @@ func TestRequestNoUrl(t *testing.T) {
 
 	if expected := `nil
 Get : unsupported protocol scheme ""
-nil
 `; expected != out {
 		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
 	}
@@ -77,12 +73,12 @@ func TestRequestGet(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.request("get", "http://` + listener.Addr().String() + `")
+			response, error = http.request("get", "http://` + listener.Addr().String() + `")
 
-			print(body)
-			print(status)
-			print(headers["Content-Length"])
-			print(headers["Content-Type"])
+			print(response["body"])
+			print(response["status_code"])
+			print(response["headers"]["Content-Length"])
+			print(response["headers"]["Content-Type"])
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -114,11 +110,11 @@ func TestRequestPostForm(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.request("post", "http://` + listener.Addr().String() + `", {
+			response, error = http.request("post", "http://` + listener.Addr().String() + `", {
 				form="username=bob&password=secret"
 			})
 
-			print(body)
+			print(response["body"])
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -153,13 +149,13 @@ func TestRequestGetHeaders(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.request("get", "http://` + listener.Addr().String() + `", {
+			response, error = http.request("get", "http://` + listener.Addr().String() + `", {
 				headers={
 					Something="Test"
 				}
 			})
 	
-			print(body)
+			print(response["body"])
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -189,11 +185,11 @@ func TestRequestGetQuery(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.request("get", "http://` + listener.Addr().String() + `", {
+			response, error = http.request("get", "http://` + listener.Addr().String() + `", {
 				query="page=1"
 			})
 	
-			print(body)
+			print(response["body"])
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -222,14 +218,14 @@ func TestGet(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.get("http://` + listener.Addr().String() + `", {
+			response, error = http.get("http://` + listener.Addr().String() + `", {
 				query="page=1"
 			})
 
-			print(body)
-			print(status)
-			print(headers["Content-Length"])
-			print(headers["Content-Type"])
+			print(response["body"])
+			print(response["status_code"])
+			print(response["headers"]["Content-Length"])
+			print(response["headers"]["Content-Type"])
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -261,12 +257,12 @@ func TestHead(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.head("http://` + listener.Addr().String() + `", {
+			response, error = http.head("http://` + listener.Addr().String() + `", {
 				query="page=1"
 			})
 
-			print(headers["X-Request-Method"])
-			print(headers["X-Request-Uri"])
+			print(response["headers"]["X-Request-Method"])
+			print(response["headers"]["X-Request-Uri"])
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -291,11 +287,11 @@ func TestPost(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.post("http://` + listener.Addr().String() + `", {
+			response, error = http.post("http://` + listener.Addr().String() + `", {
 				form="username=bob&password=secret"
 			})
 
-			print(body)
+			print(response["body"])
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -330,11 +326,11 @@ func TestPatch(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.patch("http://` + listener.Addr().String() + `", {
+			response, error = http.patch("http://` + listener.Addr().String() + `", {
 				form="username=bob&password=secret"
 			})
 
-			print(body)
+			print(response["body"])
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
@@ -369,11 +365,11 @@ func TestPut(t *testing.T) {
 	out := captureStdout(func() {
 		if err := L.DoString(`
 			local http = require("http")
-			body, status, headers = http.put("http://` + listener.Addr().String() + `", {
+			response, error = http.put("http://` + listener.Addr().String() + `", {
 				form="username=bob&password=secret"
 			})
 
-			print(body)
+			print(response["body"])
 		`); err != nil {
 			t.Errorf("Failed to evaluate script: %s", err)
 		}
