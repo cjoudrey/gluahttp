@@ -392,6 +392,131 @@ username=bob&password=secret
 	}
 }
 
+func TestResponseCookies(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", NewHttpModule().Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			response, error = http.get("http://` + listener.Addr().String() + `/set_cookie")
+			print(response["status_code"])
+			print(response["body"])
+			print(response["cookies"]["session_id"])
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `200
+Cookie set!
+12345
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
+func TestRequestCookies(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", NewHttpModule().Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			response, error = http.get("http://` + listener.Addr().String() + `/get_cookie", {
+				cookies={
+					["session_id"]="test"
+				}
+			})
+			print(response["status_code"])
+			print(response["body"])
+
+			response, error = http.get("http://` + listener.Addr().String() + `/get_cookie")
+			print(response["status_code"])
+			print(response["body"])
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `200
+session_id=test
+200
+<nil>
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
+func TestCookiesPerLState(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", NewHttpModule().Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			response, error = http.get("http://` + listener.Addr().String() + `/set_cookie")
+			print(response["status_code"])
+			print(response["body"])
+
+			response, error = http.get("http://` + listener.Addr().String() + `/get_cookie")
+			print(response["status_code"])
+			print(response["body"])
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `200
+Cookie set!
+200
+session_id=12345
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+
+	L = lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", NewHttpModule().Loader)
+
+	listener, _ = net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out = captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+
+			response, error = http.get("http://` + listener.Addr().String() + `/get_cookie")
+			print(response["status_code"])
+			print(response["body"])
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `200
+<nil>
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
 func captureStdout(inner func()) string {
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
@@ -423,6 +548,14 @@ func setupEchoServer(listener net.Listener) {
 		} else {
 			fmt.Fprintf(w, "Error: %s", err)
 		}
+	})
+	mux.HandleFunc("/set_cookie", func(w http.ResponseWriter, req *http.Request) {
+		http.SetCookie(w, &http.Cookie{Name: "session_id", Value: "12345"})
+		fmt.Fprint(w, "Cookie set!")
+	})
+	mux.HandleFunc("/get_cookie", func(w http.ResponseWriter, req *http.Request) {
+		session_id, _ := req.Cookie("session_id")
+		fmt.Fprint(w, session_id)
 	})
 	s := &http.Server{
 		Handler: mux,

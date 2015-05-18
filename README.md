@@ -50,6 +50,7 @@ if err := L.DoString(`
 | Name    | Type   | Description |
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
+| cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
 
 **Returns**
@@ -70,6 +71,7 @@ if err := L.DoString(`
 | Name    | Type   | Description |
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
+| cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
 
 **Returns**
@@ -90,6 +92,7 @@ if err := L.DoString(`
 | Name    | Type   | Description |
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
+| cookies | Table  | Additional cookies to send with the request |
 | form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
 
@@ -111,6 +114,7 @@ if err := L.DoString(`
 | Name    | Type   | Description |
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
+| cookies | Table  | Additional cookies to send with the request |
 | form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
 
@@ -132,6 +136,7 @@ if err := L.DoString(`
 | Name    | Type   | Description |
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
+| cookies | Table  | Additional cookies to send with the request |
 | form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
 
@@ -154,6 +159,7 @@ if err := L.DoString(`
 | Name    | Type   | Description |
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
+| cookies | Table  | Additional cookies to send with the request |
 | form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
 
@@ -171,4 +177,5 @@ The `http.response` table contains information about a completed HTTP request.
 | ----------- | ------ | ----------- |
 | body        | String | The HTTP response body |
 | headers     | Table  | The HTTP response headers |
+| cookies     | Table  | The cookies sent by the server in the HTTP response |
 | status_code | Number | The HTTP response status code |

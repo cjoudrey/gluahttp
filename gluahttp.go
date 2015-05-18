@@ -2,6 +2,7 @@ package gluahttp
 
 import "github.com/yuin/gopher-lua"
 import "net/http"
+import "net/http/cookiejar"
 import "fmt"
 import "io/ioutil"
 import "strings"
@@ -11,8 +12,12 @@ type httpModule struct {
 }
 
 func NewHttpModule() *httpModule {
+	cookieJar, _ := cookiejar.New(nil)
+
 	return &httpModule{
-		client: &http.Client{},
+		client: &http.Client{
+			Jar: cookieJar,
+		},
 	}
 }
 
@@ -68,6 +73,12 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 			})
 		}
 
+		if reqCookies, ok := options.RawGet(lua.LString("cookies")).(*lua.LTable); ok {
+			reqCookies.ForEach(func(key lua.LValue, value lua.LValue) {
+				req.AddCookie(&http.Cookie{Name: key.String(), Value: value.String()})
+			})
+		}
+
 		switch reqQuery := options.RawGet(lua.LString("query")).(type) {
 		case *lua.LNilType:
 			break
@@ -108,9 +119,15 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 		headers.RawSetString(key, lua.LString(res.Header.Get(key)))
 	}
 
+	cookies := L.NewTable()
+	for _, cookie := range res.Cookies() {
+		cookies.RawSetString(cookie.Name, lua.LString(cookie.Value))
+	}
+
 	response := L.NewTable()
 	response.RawSetString("body", lua.LString(body))
 	response.RawSetString("headers", headers)
+	response.RawSetString("cookies", cookies)
 	response.RawSetString("status_code", lua.LNumber(res.StatusCode))
 
 	L.Push(response)
