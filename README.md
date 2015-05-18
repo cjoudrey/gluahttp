@@ -43,6 +43,24 @@ In the event of an error, the return is as follows:
 - `nil`
 - `error`: A `string` containing the error message.
 
+### http.head(url [, options])
+
+- `url`: A `string` URL of the page to load.
+- `options`: A `table` with one or many of the following parameters:
+ - `query`: Query string in the form of a `string`.
+ - `headers`: `table` of additional headers to send with the request.
+
+Return:
+
+- `body`: A `string` containing the response body.
+- `status`: A `number` containing the HTTP status code.
+- `headers`: A `table` containing the response headers.
+
+In the event of an error, the return is as follows:
+
+- `nil`
+- `error`: A `string` containing the error message.
+
 ### http.patch(url [, options])
 
 - `url`: A `string` URL of the page to load.

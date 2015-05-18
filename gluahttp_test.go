@@ -249,6 +249,36 @@ text/plain; charset=utf-8
 	}
 }
 
+func TestHead(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			body, status, headers = http.head("http://` + listener.Addr().String() + `", {
+				query="page=1"
+			})
+
+			print(headers["X-Request-Method"])
+			print(headers["X-Request-Uri"])
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `HEAD
+/?page=1
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
 func TestPost(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
@@ -390,6 +420,8 @@ func captureStdout(inner func()) string {
 func setupEchoServer(listener net.Listener) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("X-Request-Method", req.Method)
+		w.Header().Set("X-Request-Uri", req.URL.String())
 		if debug, err := httputil.DumpRequest(req, true); err == nil {
 			fmt.Fprint(w, string(debug))
 		} else {

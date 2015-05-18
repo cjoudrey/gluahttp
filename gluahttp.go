@@ -13,15 +13,20 @@ func Loader(L *lua.LState) int {
 }
 
 var exports = map[string]lua.LGFunction{
-	"get": get,
-	"patch": patch,
-	"post": post,
-	"put": put,
+	"get":     get,
+	"head":    head,
+	"patch":   patch,
+	"post":    post,
+	"put":     put,
 	"request": request,
 }
 
 func get(L *lua.LState) int {
 	return doRequest(L, "get", L.ToString(1), L.ToTable(2))
+}
+
+func head(L *lua.LState) int {
+	return doRequest(L, "head", L.ToString(1), L.ToTable(2))
 }
 
 func patch(L *lua.LState) int {
