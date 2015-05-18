@@ -12,15 +12,26 @@ go get github.com/cjoudrey/gluahttp
 
 ## Usage
 
-```lua
-local http = require("http")
+```go
+L := lua.NewState()
+defer L.Close()
 
-response, error = http.request("GET", "http://example.com", {
-  query="page=1"
-  headers={
-    Accept="*/*"
-  }
-})
+L.PreloadModule("http", NewHttpModule().Loader)
+
+if err := L.DoString(`
+
+    local http = require("http")
+
+    response, error_message = http.request("GET", "http://example.com", {
+        query="page=1"
+        headers={
+            Accept="*/*"
+        }
+    })
+
+`); err != nil {
+    panic(err)
+}
 ```
 
 ## API

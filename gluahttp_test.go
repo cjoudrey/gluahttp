@@ -15,7 +15,7 @@ func TestRequestNoMethod(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	out := captureStdout(func() {
 		if err := L.DoString(`
@@ -40,7 +40,7 @@ func TestRequestNoUrl(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	out := captureStdout(func() {
 		if err := L.DoString(`
@@ -65,7 +65,7 @@ func TestRequestGet(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	setupEchoServer(listener)
@@ -102,7 +102,7 @@ func TestRequestPostForm(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	setupEchoServer(listener)
@@ -141,7 +141,7 @@ func TestRequestGetHeaders(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	setupEchoServer(listener)
@@ -177,7 +177,7 @@ func TestRequestGetQuery(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	setupEchoServer(listener)
@@ -210,7 +210,7 @@ func TestGet(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	setupEchoServer(listener)
@@ -249,7 +249,7 @@ func TestHead(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	setupEchoServer(listener)
@@ -279,7 +279,7 @@ func TestPost(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	setupEchoServer(listener)
@@ -318,7 +318,7 @@ func TestPatch(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	setupEchoServer(listener)
@@ -357,7 +357,7 @@ func TestPut(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", Loader)
+	L.PreloadModule("http", NewHttpModule().Loader)
 
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	setupEchoServer(listener)

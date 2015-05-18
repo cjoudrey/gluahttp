@@ -6,46 +6,54 @@ import "fmt"
 import "io/ioutil"
 import "strings"
 
-func Loader(L *lua.LState) int {
-	mod := L.SetFuncs(L.NewTable(), exports)
+type httpModule struct {
+	client *http.Client
+}
+
+func NewHttpModule() *httpModule {
+	return &httpModule{
+		client: &http.Client{},
+	}
+}
+
+func (h *httpModule) Loader(L *lua.LState) int {
+	mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
+		"get":     h.get,
+		"head":    h.head,
+		"patch":   h.patch,
+		"post":    h.post,
+		"put":     h.put,
+		"request": h.request,
+	})
 	L.Push(mod)
 	return 1
 }
 
-var exports = map[string]lua.LGFunction{
-	"get":     get,
-	"head":    head,
-	"patch":   patch,
-	"post":    post,
-	"put":     put,
-	"request": request,
+func (h *httpModule) get(L *lua.LState) int {
+	return h.doRequest(L, "get", L.ToString(1), L.ToTable(2))
 }
 
-func get(L *lua.LState) int {
-	return doRequest(L, "get", L.ToString(1), L.ToTable(2))
+func (h *httpModule) head(L *lua.LState) int {
+	return h.doRequest(L, "head", L.ToString(1), L.ToTable(2))
 }
 
-func head(L *lua.LState) int {
-	return doRequest(L, "head", L.ToString(1), L.ToTable(2))
+func (h *httpModule) patch(L *lua.LState) int {
+	return h.doRequest(L, "patch", L.ToString(1), L.ToTable(2))
 }
 
-func patch(L *lua.LState) int {
-	return doRequest(L, "patch", L.ToString(1), L.ToTable(2))
+func (h *httpModule) post(L *lua.LState) int {
+	return h.doRequest(L, "post", L.ToString(1), L.ToTable(2))
 }
 
-func post(L *lua.LState) int {
-	return doRequest(L, "post", L.ToString(1), L.ToTable(2))
+func (h *httpModule) put(L *lua.LState) int {
+	return h.doRequest(L, "put", L.ToString(1), L.ToTable(2))
 }
 
-func put(L *lua.LState) int {
-	return doRequest(L, "put", L.ToString(1), L.ToTable(2))
+func (h *httpModule) request(L *lua.LState) int {
+	return h.doRequest(L, L.ToString(1), L.ToString(2), L.ToTable(3))
 }
 
-func request(L *lua.LState) int {
-	return doRequest(L, L.ToString(1), L.ToString(2), L.ToTable(3))
-}
-
-func doRequest(L *lua.LState, method string, url string, options *lua.LTable) int {
+func (h *httpModule) doRequest(L *lua.LState, method string, url string, options *lua.LTable) int {
 	req, err := http.NewRequest(strings.ToUpper(method), url, nil)
 	if err != nil {
 		L.Push(lua.LNil)
@@ -80,8 +88,7 @@ func doRequest(L *lua.LState, method string, url string, options *lua.LTable) in
 		}
 	}
 
-	client := &http.Client{}
-	res, err := client.Do(req)
+	res, err := h.client.Do(req)
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(fmt.Sprintf("%s", err)))
