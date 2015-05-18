@@ -13,6 +13,9 @@ go get github.com/cjoudrey/gluahttp
 ## Usage
 
 ```go
+import "github.com/yuin/gopher-lua"
+import "github.com/cjoudrey/gluahttp"
+
 L := lua.NewState()
 defer L.Close()
 
