@@ -39,6 +39,15 @@ if err := L.DoString(`
 
 ## API
 
+- [`http.delete(url [, options])`](#httpdeleteurl--options)
+- [`http.get(url [, options])`](#httpgeturl--options)
+- [`http.head(url [, options])`](#httpheadurl--options)
+- [`http.patch(url [, options])`](#httppatchurl--options)
+- [`http.post(url [, options])`](#httpposturl--options)
+- [`http.put(url [, options])`](#httpputurl--options)
+- [`http.request(method, url [, options])`](#httprequestmethod-url--options)
+- [`http.response`](#httpresponse)
+
 ### http.delete(url [, options])
 
 **Attributes**
