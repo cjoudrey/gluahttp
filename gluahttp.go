@@ -36,39 +36,37 @@ func (h *httpModule) Loader(L *lua.LState) int {
 }
 
 func (h *httpModule) get(L *lua.LState) int {
-	return h.doRequest(L, "get", L.ToString(1), L.ToTable(2))
+	return h.doRequestAndPush(L, "get", L.ToString(1), L.ToTable(2))
 }
 
 func (h *httpModule) delete(L *lua.LState) int {
-	return h.doRequest(L, "delete", L.ToString(1), L.ToTable(2))
+	return h.doRequestAndPush(L, "delete", L.ToString(1), L.ToTable(2))
 }
 
 func (h *httpModule) head(L *lua.LState) int {
-	return h.doRequest(L, "head", L.ToString(1), L.ToTable(2))
+	return h.doRequestAndPush(L, "head", L.ToString(1), L.ToTable(2))
 }
 
 func (h *httpModule) patch(L *lua.LState) int {
-	return h.doRequest(L, "patch", L.ToString(1), L.ToTable(2))
+	return h.doRequestAndPush(L, "patch", L.ToString(1), L.ToTable(2))
 }
 
 func (h *httpModule) post(L *lua.LState) int {
-	return h.doRequest(L, "post", L.ToString(1), L.ToTable(2))
+	return h.doRequestAndPush(L, "post", L.ToString(1), L.ToTable(2))
 }
 
 func (h *httpModule) put(L *lua.LState) int {
-	return h.doRequest(L, "put", L.ToString(1), L.ToTable(2))
+	return h.doRequestAndPush(L, "put", L.ToString(1), L.ToTable(2))
 }
 
 func (h *httpModule) request(L *lua.LState) int {
-	return h.doRequest(L, L.ToString(1), L.ToString(2), L.ToTable(3))
+	return h.doRequestAndPush(L, L.ToString(1), L.ToString(2), L.ToTable(3))
 }
 
-func (h *httpModule) doRequest(L *lua.LState, method string, url string, options *lua.LTable) int {
+func (h *httpModule) doRequest(L *lua.LState, method string, url string, options *lua.LTable) (*lua.LTable, error) {
 	req, err := http.NewRequest(strings.ToUpper(method), url, nil)
 	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(fmt.Sprintf("%s", err)))
-		return 2
+		return nil, err
 	}
 
 	if options != nil {
@@ -106,17 +104,13 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 
 	res, err := h.client.Do(req)
 	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(fmt.Sprintf("%s", err)))
-		return 2
+		return nil, err
 	}
 
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(fmt.Sprintf("%s", err)))
-		return 2
+		return nil, err
 	}
 
 	headers := L.NewTable()
@@ -135,7 +129,18 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 	response.RawSetString("cookies", cookies)
 	response.RawSetString("status_code", lua.LNumber(res.StatusCode))
 
-	L.Push(response)
+	return response, nil
+}
 
+func (h *httpModule) doRequestAndPush(L *lua.LState, method string, url string, options *lua.LTable) int {
+	response, err := h.doRequest(L, method, url, options)
+
+	if err != nil {
+		L.Push(lua.LNil)
+		L.Push(lua.LString(fmt.Sprintf("%s", err)))
+		return 2
+	}
+
+	L.Push(response)
 	return 1
 }
