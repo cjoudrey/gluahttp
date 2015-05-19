@@ -39,6 +39,27 @@ if err := L.DoString(`
 
 ## API
 
+### http.delete(url [, options])
+
+**Attributes**
+
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| url     | String | URL of the resource to load |
+| options | Table  | Additional options |
+
+**Options**
+
+| Name    | Type   | Description |
+| ------- | ------ | ----------- |
+| query   | String | URL encoded query params |
+| cookies | Table  | Additional cookies to send with the request |
+| headers | Table  | Additional headers to send with the request |
+
+**Returns**
+
+[http.response](#httpresponse) or (nil, error message)
+
 ### http.get(url [, options])
 
 **Attributes**

@@ -24,6 +24,7 @@ func NewHttpModule() *httpModule {
 func (h *httpModule) Loader(L *lua.LState) int {
 	mod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
 		"get":     h.get,
+		"delete":  h.delete,
 		"head":    h.head,
 		"patch":   h.patch,
 		"post":    h.post,
@@ -36,6 +37,10 @@ func (h *httpModule) Loader(L *lua.LState) int {
 
 func (h *httpModule) get(L *lua.LState) int {
 	return h.doRequest(L, "get", L.ToString(1), L.ToTable(2))
+}
+
+func (h *httpModule) delete(L *lua.LState) int {
+	return h.doRequest(L, "delete", L.ToString(1), L.ToTable(2))
 }
 
 func (h *httpModule) head(L *lua.LState) int {

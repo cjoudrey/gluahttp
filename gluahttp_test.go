@@ -245,6 +245,45 @@ text/plain; charset=utf-8
 	}
 }
 
+func TestDelete(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", NewHttpModule().Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			response, error = http.delete("http://` + listener.Addr().String() + `", {
+				query="page=1"
+			})
+
+			print(response["body"])
+			print(response["status_code"])
+			print(response["headers"]["Content-Length"])
+			print(response["headers"]["Content-Type"])
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `DELETE /?page=1 HTTP/1.1
+Host: ` + listener.Addr().String() + `
+Accept-Encoding: gzip
+User-Agent: Go 1.1 package http
+
+
+200
+107
+text/plain; charset=utf-8
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
 func TestHead(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
