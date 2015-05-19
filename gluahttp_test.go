@@ -61,6 +61,68 @@ Get : unsupported protocol scheme ""
 	}
 }
 
+func TestRequestBatch(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", NewHttpModule().Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			responses, errors = http.request_batch({
+				{"get", "http://` + listener.Addr().String() + `", {query="page=1"}},
+				{"post", "http://` + listener.Addr().String() + `/set_cookie"},
+				{"post", ""},
+				1
+			})
+
+			print(responses[1]["body"])
+			print(responses[2]["body"])
+			print(responses[2]["cookies"]["session_id"])
+			print(responses[3])
+			print(responses[4])
+
+			print(errors[1])
+			print(errors[2])
+			print(errors[3])
+			print(errors[4])
+
+			responses, errors = http.request_batch({
+				{"get", "http://` + listener.Addr().String() + `/get_cookie"}
+			})
+
+			print(responses[1]["body"])
+			print(errors)
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `GET /?page=1 HTTP/1.1
+Host: ` + listener.Addr().String() + `
+Accept-Encoding: gzip
+User-Agent: Go 1.1 package http
+
+
+Cookie set!
+12345
+nil
+nil
+nil
+nil
+Post : unsupported protocol scheme ""
+Request must be a table
+session_id=12345
+nil
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
 func TestRequestGet(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
