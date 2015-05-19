@@ -46,7 +46,7 @@ if err := L.DoString(`
 - [`http.post(url [, options])`](#httpposturl--options)
 - [`http.put(url [, options])`](#httpputurl--options)
 - [`http.request(method, url [, options])`](#httprequestmethod-url--options)
-- [`http.request_batch(requests)`](#httprequest-batch-requests)
+- [`http.request_batch(requests)`](#httprequest_batchrequests)
 - [`http.response`](#httpresponse)
 
 ### http.delete(url [, options])
