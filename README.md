@@ -46,6 +46,7 @@ if err := L.DoString(`
 - [`http.post(url [, options])`](#httpposturl--options)
 - [`http.put(url [, options])`](#httpputurl--options)
 - [`http.request(method, url [, options])`](#httprequestmethod-url--options)
+- [`http.request_batch(requests)`](#httprequest-batch-requests)
 - [`http.response`](#httpresponse)
 
 ### http.delete(url [, options])
@@ -199,6 +200,18 @@ if err := L.DoString(`
 **Returns**
 
 [http.response](#httpresponse) or (nil, error message)
+
+### http.request_batch(requests)
+
+**Attributes**
+
+| Name     | Type  | Description |
+| -------- | ----- | ----------- |
+| requests | Table | A table of requests to send. Each request item is by itself a table containing [http.request](#httprequestmethod-url--options) parameters for the request |
+
+**Returns**
+
+[[http.response](#httpresponse)] or ([[http.response](#httpresponse)], [error message])
 
 ### http.response
 
