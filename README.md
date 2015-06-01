@@ -16,24 +16,26 @@ go get github.com/cjoudrey/gluahttp
 import "github.com/yuin/gopher-lua"
 import "github.com/cjoudrey/gluahttp"
 
-L := lua.NewState()
-defer L.Close()
+func main() {
+    L := lua.NewState()
+    defer L.Close()
 
-L.PreloadModule("http", NewHttpModule().Loader)
+    L.PreloadModule("http", NewHttpModule().Loader)
 
-if err := L.DoString(`
+    if err := L.DoString(`
 
-    local http = require("http")
+        local http = require("http")
 
-    response, error_message = http.request("GET", "http://example.com", {
-        query="page=1"
-        headers={
-            Accept="*/*"
-        }
-    })
+        response, error_message = http.request("GET", "http://example.com", {
+            query="page=1"
+            headers={
+                Accept="*/*"
+            }
+        })
 
-`); err != nil {
-    panic(err)
+    `); err != nil {
+        panic(err)
+    }
 }
 ```
 
