@@ -200,6 +200,7 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 	response.RawSetString("headers", headers)
 	response.RawSetString("cookies", cookies)
 	response.RawSetString("status_code", lua.LNumber(res.StatusCode))
+	response.RawSetString("url", lua.LString(res.Request.URL.String()))
 
 	return response, nil
 }

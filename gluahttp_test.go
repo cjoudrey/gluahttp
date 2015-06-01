@@ -160,6 +160,42 @@ text/plain; charset=utf-8
 	}
 }
 
+func TestRequestGetWithRedirect(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+
+	L.PreloadModule("http", NewHttpModule().Loader)
+
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupEchoServer(listener)
+
+	out := captureStdout(func() {
+		if err := L.DoString(`
+			local http = require("http")
+			response, error = http.request("get", "http://` + listener.Addr().String() + `/redirect")
+
+			print(response["body"])
+			print(response["status_code"])
+			print(response["url"])
+		`); err != nil {
+			t.Errorf("Failed to evaluate script: %s", err)
+		}
+	})
+
+	if expected := `GET / HTTP/1.1
+Host: ` + listener.Addr().String() + `
+Accept-Encoding: gzip
+Referer: http://` + listener.Addr().String() + `/redirect
+User-Agent: Go 1.1 package http
+
+
+200
+http://` + listener.Addr().String() + `/
+`; expected != out {
+		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+	}
+}
+
 func TestRequestPostForm(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
@@ -657,6 +693,9 @@ func setupEchoServer(listener net.Listener) {
 	mux.HandleFunc("/get_cookie", func(w http.ResponseWriter, req *http.Request) {
 		session_id, _ := req.Cookie("session_id")
 		fmt.Fprint(w, session_id)
+	})
+	mux.HandleFunc("/redirect", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "/", http.StatusFound)
 	})
 	s := &http.Server{
 		Handler: mux,

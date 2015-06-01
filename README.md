@@ -227,3 +227,4 @@ The `http.response` table contains information about a completed HTTP request.
 | headers     | Table  | The HTTP response headers |
 | cookies     | Table  | The cookies sent by the server in the HTTP response |
 | status_code | Number | The HTTP response status code |
+| url         | String | The final URL the request ended pointing to after redirects |
