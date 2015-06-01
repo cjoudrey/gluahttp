@@ -33,7 +33,7 @@ func (h *httpModule) Loader(L *lua.LState) int {
 		"post":          h.post,
 		"put":           h.put,
 		"request":       h.request,
-		"request_batch": h.request_batch,
+		"request_batch": h.requestBatch,
 	})
 	L.Push(mod)
 	return 1
@@ -67,7 +67,7 @@ func (h *httpModule) request(L *lua.LState) int {
 	return h.doRequestAndPush(L, L.ToString(1), L.ToString(2), L.ToTable(3))
 }
 
-func (h *httpModule) request_batch(L *lua.LState) int {
+func (h *httpModule) requestBatch(L *lua.LState) int {
 	requests := L.ToTable(1)
 	amountRequests := requests.Len()
 
