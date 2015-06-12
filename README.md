@@ -20,7 +20,7 @@ func main() {
     L := lua.NewState()
     defer L.Close()
 
-    L.PreloadModule("http", NewHttpModule().Loader)
+    L.PreloadModule("http", NewHttpModule(&http.Client{}).Loader)
 
     if err := L.DoString(`
 

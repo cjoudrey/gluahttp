@@ -2,688 +2,347 @@ package gluahttp
 
 import "github.com/yuin/gopher-lua"
 import "testing"
-import "os"
-import "bytes"
-import "io"
+import "io/ioutil"
 import "net/http"
 import "net"
 import "fmt"
-import "net/http/httputil"
-import "strings"
+import "net/http/cookiejar"
 
 func TestRequestNoMethod(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.request()
 
-	L.PreloadModule("http", NewHttpModule().Loader)
-
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.request()
-
-			print(response)
-			print(error)
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `nil
-unsupported protocol scheme ""
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal(nil, response)
+		assert_equal('unsupported protocol scheme ""', error)
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestRequestNoUrl(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.request("get")
 
-	L.PreloadModule("http", NewHttpModule().Loader)
-
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.request("get")
-
-			print(response)
-			print(error)
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `nil
-Get : unsupported protocol scheme ""
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal(nil, response)
+		assert_equal('Get : unsupported protocol scheme ""', error)
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestRequestBatch(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			responses, errors = http.request_batch({
-				{"get", "http://` + listener.Addr().String() + `", {query="page=1"}},
-				{"post", "http://` + listener.Addr().String() + `/set_cookie"},
-				{"post", ""},
-				1
-			})
+	if err := evalLua(t, `
+		local http = require("http")
+		responses, errors = http.request_batch({
+			{"get", "http://`+listener.Addr().String()+`", {query="page=1"}},
+			{"post", "http://`+listener.Addr().String()+`/set_cookie"},
+			{"post", ""},
+			1
+		})
 
-			print(responses[1]["body"])
-			print(responses[2]["body"])
-			print(responses[2]["cookies"]["session_id"])
-			print(responses[3])
-			print(responses[4])
+		assert_equal(nil, errors[1])
+		assert_equal(nil, errors[2])
+		assert_equal('Post : unsupported protocol scheme ""', errors[3])
+		assert_equal('Request must be a table', errors[4])
 
-			print(errors[1])
-			print(errors[2])
-			print(errors[3])
-			print(errors[4])
+		assert_equal('Requested GET / with query "page=1"', responses[1]["body"])
+		assert_equal('Cookie set!', responses[2]["body"])
+		assert_equal('12345', responses[2]["cookies"]["session_id"])
+		assert_equal(nil, responses[3])
+		assert_equal(nil, responses[4])
 
-			responses, errors = http.request_batch({
-				{"get", "http://` + listener.Addr().String() + `/get_cookie"}
-			})
+		responses, errors = http.request_batch({
+			{"get", "http://`+listener.Addr().String()+`/get_cookie"}
+		})
 
-			print(responses[1]["body"])
-			print(errors)
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `GET /?page=1 HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Accept-Encoding: gzip
-User-Agent: Go 1.1 package http
-
-
-Cookie set!
-12345
-nil
-nil
-nil
-nil
-Post : unsupported protocol scheme ""
-Request must be a table
-session_id=12345
-nil
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal(nil, errors)
+		assert_equal("session_id=12345", responses[1]["body"])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestRequestGet(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.request("get", "http://` + listener.Addr().String() + `")
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.request("get", "http://`+listener.Addr().String()+`")
 
-			print(response["body"])
-			print(response["status_code"])
-			print(response["headers"]["Content-Length"])
-			print(response["headers"]["Content-Type"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `GET / HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Accept-Encoding: gzip
-User-Agent: Go 1.1 package http
-
-
-200
-97
-text/plain; charset=utf-8
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal('Requested GET / with query ""', response['body'])
+		assert_equal(200, response['status_code'])
+		assert_equal('29', response['headers']['Content-Length'])
+		assert_equal('text/plain; charset=utf-8', response['headers']['Content-Type'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestRequestGetWithRedirect(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.request("get", "http://` + listener.Addr().String() + `/redirect")
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.request("get", "http://`+listener.Addr().String()+`/redirect")
 
-			print(response["body"])
-			print(response["status_code"])
-			print(response["url"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `GET / HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Accept-Encoding: gzip
-Referer: http://` + listener.Addr().String() + `/redirect
-User-Agent: Go 1.1 package http
-
-
-200
-http://` + listener.Addr().String() + `/
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal('Requested GET / with query ""', response['body'])
+		assert_equal(200, response['status_code'])
+		assert_equal('http://`+listener.Addr().String()+`/', response['url'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestRequestPostForm(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.request("post", "http://` + listener.Addr().String() + `", {
-				form="username=bob&password=secret"
-			})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.request("post", "http://`+listener.Addr().String()+`", {
+			form="username=bob&password=secret"
+		})
 
-			print(response["body"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `POST / HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Transfer-Encoding: chunked
-Accept-Encoding: gzip
-Content-Type: application/x-www-form-urlencoded
-User-Agent: Go 1.1 package http
-
-1c
-username=bob&password=secret
-0
-
-
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal(
+			'Requested POST / with query ""' ..
+			'Content-Type: application/x-www-form-urlencoded' ..
+			'Body: username=bob&password=secret', response['body'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
-func TestRequestGetHeaders(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
+func TestRequestHeaders(t *testing.T) {
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.request("get", "http://` + listener.Addr().String() + `", {
-				headers={
-					Something="Test"
-				}
-			})
-	
-			print(response["body"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.request("post", "http://`+listener.Addr().String()+`", {
+			headers={
+				["Content-Type"]="application/json"
+			}
+		})
 
-	if expected := `GET / HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Accept-Encoding: gzip
-Something: Test
-User-Agent: Go 1.1 package http
-
-
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal(
+			'Requested POST / with query ""' ..
+			'Content-Type: application/json' ..
+			'Body: ', response['body'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
-func TestRequestGetQuery(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
+func TestRequestQuery(t *testing.T) {
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.request("get", "http://` + listener.Addr().String() + `", {
-				query="page=1"
-			})
-	
-			print(response["body"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.request("get", "http://`+listener.Addr().String()+`", {
+			query="page=2"
+		})
 
-	if expected := `GET /?page=1 HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Accept-Encoding: gzip
-User-Agent: Go 1.1 package http
-
-
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal('Requested GET / with query "page=2"', response['body'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestGet(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.get("http://` + listener.Addr().String() + `", {
-				query="page=1"
-			})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.get("http://`+listener.Addr().String()+`", {
+			query="page=1"
+		})
 
-			print(response["body"])
-			print(response["status_code"])
-			print(response["headers"]["Content-Length"])
-			print(response["headers"]["Content-Type"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `GET /?page=1 HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Accept-Encoding: gzip
-User-Agent: Go 1.1 package http
-
-
-200
-104
-text/plain; charset=utf-8
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal('Requested GET / with query "page=1"', response['body'])
+		assert_equal(200, response['status_code'])
+		assert_equal('35', response['headers']['Content-Length'])
+		assert_equal('text/plain; charset=utf-8', response['headers']['Content-Type'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestDelete(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.delete("http://` + listener.Addr().String() + `", {
-				query="page=1"
-			})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.delete("http://`+listener.Addr().String()+`", {
+			query="page=1"
+		})
 
-			print(response["body"])
-			print(response["status_code"])
-			print(response["headers"]["Content-Length"])
-			print(response["headers"]["Content-Type"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `DELETE /?page=1 HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Accept-Encoding: gzip
-User-Agent: Go 1.1 package http
-
-
-200
-107
-text/plain; charset=utf-8
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal('Requested DELETE / with query "page=1"', response['body'])
+		assert_equal(200, response['status_code'])
+		assert_equal('38', response['headers']['Content-Length'])
+		assert_equal('text/plain; charset=utf-8', response['headers']['Content-Type'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestHead(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.head("http://` + listener.Addr().String() + `", {
-				query="page=1"
-			})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.head("http://`+listener.Addr().String()+`/head", {
+			query="page=1"
+		})
 
-			print(response["headers"]["X-Request-Method"])
-			print(response["headers"]["X-Request-Uri"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `HEAD
-/?page=1
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal(200, response['status_code'])
+		assert_equal("/head?page=1", response['headers']['X-Request-Uri'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestPost(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.post("http://` + listener.Addr().String() + `", {
-				form="username=bob&password=secret"
-			})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.post("http://`+listener.Addr().String()+`", {
+			form="username=bob&password=secret"
+		})
 
-			print(response["body"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `POST / HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Transfer-Encoding: chunked
-Accept-Encoding: gzip
-Content-Type: application/x-www-form-urlencoded
-User-Agent: Go 1.1 package http
-
-1c
-username=bob&password=secret
-0
-
-
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal(
+			'Requested POST / with query ""' ..
+			'Content-Type: application/x-www-form-urlencoded' ..
+			'Body: username=bob&password=secret', response['body'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestPatch(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.patch("http://` + listener.Addr().String() + `", {
-				form="username=bob&password=secret"
-			})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.patch("http://`+listener.Addr().String()+`", {
+			form="username=bob&password=secret"
+		})
 
-			print(response["body"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `PATCH / HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Transfer-Encoding: chunked
-Accept-Encoding: gzip
-Content-Type: application/x-www-form-urlencoded
-User-Agent: Go 1.1 package http
-
-1c
-username=bob&password=secret
-0
-
-
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal(
+			'Requested PATCH / with query ""' ..
+			'Content-Type: application/x-www-form-urlencoded' ..
+			'Body: username=bob&password=secret', response['body'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestPut(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.put("http://` + listener.Addr().String() + `", {
-				form="username=bob&password=secret"
-			})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.put("http://`+listener.Addr().String()+`", {
+			form="username=bob&password=secret"
+		})
 
-			print(response["body"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `PUT / HTTP/1.1
-Host: ` + listener.Addr().String() + `
-Transfer-Encoding: chunked
-Accept-Encoding: gzip
-Content-Type: application/x-www-form-urlencoded
-User-Agent: Go 1.1 package http
-
-1c
-username=bob&password=secret
-0
-
-
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal(
+			'Requested PUT / with query ""' ..
+			'Content-Type: application/x-www-form-urlencoded' ..
+			'Body: username=bob&password=secret', response['body'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestResponseCookies(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	setupServer(listener)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.get("http://` + listener.Addr().String() + `/set_cookie")
-			print(response["status_code"])
-			print(response["body"])
-			print(response["cookies"]["session_id"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.get("http://`+listener.Addr().String()+`/set_cookie")
 
-	if expected := `200
-Cookie set!
-12345
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
+		assert_equal('Cookie set!', response["body"])
+		assert_equal('12345', response["cookies"]["session_id"])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
 	}
 }
 
 func TestRequestCookies(t *testing.T) {
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupServer(listener)
+
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.get("http://`+listener.Addr().String()+`/get_cookie", {
+			cookies={
+				["session_id"]="test"
+			}
+		})
+
+		assert_equal('session_id=test', response["body"])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
+	}
+}
+
+func evalLua(t *testing.T, script string) error {
 	L := lua.NewState()
 	defer L.Close()
 
-	L.PreloadModule("http", NewHttpModule().Loader)
+	cookieJar, _ := cookiejar.New(nil)
 
-	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
+	L.PreloadModule("http", NewHttpModule(&http.Client{
+		Jar: cookieJar,
+	},
+	).Loader)
 
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.get("http://` + listener.Addr().String() + `/get_cookie", {
-				cookies={
-					["session_id"]="test"
-				}
-			})
-			print(response["status_code"])
-			print(response["body"])
+	L.SetGlobal("assert_equal", L.NewFunction(func(L *lua.LState) int {
+		expected := L.Get(1)
+		actual := L.Get(2)
 
-			response, error = http.get("http://` + listener.Addr().String() + `/get_cookie")
-			print(response["status_code"])
-			print(response["body"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
+		if expected.Type() != actual.Type() || expected.String() != actual.String() {
+			t.Errorf("Expected %s %q, got %s %q", expected.Type(), expected, actual.Type(), actual)
 		}
-	})
 
-	if expected := `200
-session_id=test
-200
-<nil>
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
-	}
+		return 0
+	}))
+
+	return L.DoString(script)
 }
 
-func TestCookiesPerLState(t *testing.T) {
-	L := lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
-	listener, _ := net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
-
-	out := captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-			response, error = http.get("http://` + listener.Addr().String() + `/set_cookie")
-			print(response["status_code"])
-			print(response["body"])
-
-			response, error = http.get("http://` + listener.Addr().String() + `/get_cookie")
-			print(response["status_code"])
-			print(response["body"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `200
-Cookie set!
-200
-session_id=12345
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
-	}
-
-	L = lua.NewState()
-	defer L.Close()
-
-	L.PreloadModule("http", NewHttpModule().Loader)
-
-	listener, _ = net.Listen("tcp", "127.0.0.1:0")
-	setupEchoServer(listener)
-
-	out = captureStdout(func() {
-		if err := L.DoString(`
-			local http = require("http")
-
-			response, error = http.get("http://` + listener.Addr().String() + `/get_cookie")
-			print(response["status_code"])
-			print(response["body"])
-		`); err != nil {
-			t.Errorf("Failed to evaluate script: %s", err)
-		}
-	})
-
-	if expected := `200
-<nil>
-`; expected != out {
-		t.Errorf("Expected output does not match actual output\nExpected: %s\nActual: %s", expected, out)
-	}
-}
-
-func captureStdout(inner func()) string {
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	outC := make(chan string)
-	go func() {
-		var buf bytes.Buffer
-		io.Copy(&buf, r)
-		outC <- buf.String()
-	}()
-
-	inner()
-
-	w.Close()
-	os.Stdout = oldStdout
-	out := strings.Replace(<-outC, "\r", "", -1)
-
-	return out
-}
-
-func setupEchoServer(listener net.Listener) {
+func setupServer(listener net.Listener) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("X-Request-Method", req.Method)
-		w.Header().Set("X-Request-Uri", req.URL.String())
-		if debug, err := httputil.DumpRequest(req, true); err == nil {
-			fmt.Fprint(w, string(debug))
+		fmt.Fprintf(w, "Requested %s / with query %q", req.Method, req.URL.RawQuery)
+
+		if req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT" {
+			body, _ := ioutil.ReadAll(req.Body)
+			fmt.Fprintf(w, "Content-Type: %s", req.Header.Get("Content-Type"))
+			fmt.Fprintf(w, "Body: %s", body)
+		}
+	})
+	mux.HandleFunc("/head", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == "HEAD" {
+			w.Header().Set("X-Request-Uri", req.URL.String())
+			w.WriteHeader(http.StatusOK)
 		} else {
-			fmt.Fprintf(w, "Error: %s", err)
+			w.WriteHeader(http.StatusNotFound)
 		}
 	})
 	mux.HandleFunc("/set_cookie", func(w http.ResponseWriter, req *http.Request) {

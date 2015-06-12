@@ -2,7 +2,6 @@ package gluahttp
 
 import "github.com/yuin/gopher-lua"
 import "net/http"
-import "net/http/cookiejar"
 import "fmt"
 import "errors"
 import "io/ioutil"
@@ -14,13 +13,9 @@ type httpModule struct {
 
 type empty struct{}
 
-func NewHttpModule() *httpModule {
-	cookieJar, _ := cookiejar.New(nil)
-
+func NewHttpModule(client *http.Client) *httpModule {
 	return &httpModule{
-		client: &http.Client{
-			Jar: cookieJar,
-		},
+		client: client,
 	}
 }
 
