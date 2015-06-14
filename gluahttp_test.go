@@ -316,6 +316,23 @@ func TestResponseBodySize(t *testing.T) {
 	}
 }
 
+func TestResponseUrl(t *testing.T) {
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupServer(listener)
+
+	if err := evalLua(t, `
+		local http = require("http")
+
+		response, error = http.get("http://`+listener.Addr().String()+`/redirect")
+		assert_equal("http://`+listener.Addr().String()+`/", response["url"])
+
+		response, error = http.get("http://`+listener.Addr().String()+`/get_cookie")
+		assert_equal("http://`+listener.Addr().String()+`/get_cookie", response["url"])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
+	}
+}
+
 func evalLua(t *testing.T, script string) error {
 	L := lua.NewState()
 	defer L.Close()
