@@ -4,6 +4,7 @@ import "github.com/yuin/gopher-lua"
 import "net/http"
 import "fmt"
 import "errors"
+import "io"
 import "io/ioutil"
 import "strings"
 
@@ -30,6 +31,7 @@ func (h *httpModule) Loader(L *lua.LState) int {
 		"request":       h.request,
 		"request_batch": h.requestBatch,
 	})
+	registerHttpResponseType(mod, L)
 	L.Push(mod)
 	return 1
 }
@@ -67,7 +69,7 @@ func (h *httpModule) requestBatch(L *lua.LState) int {
 	amountRequests := requests.Len()
 
 	errs := make([]error, amountRequests)
-	responses := make([]*lua.LTable, amountRequests)
+	responses := make([]*lua.LUserData, amountRequests)
 	sem := make(chan empty, amountRequests)
 
 	i := 0
@@ -130,7 +132,7 @@ func (h *httpModule) requestBatch(L *lua.LState) int {
 	}
 }
 
-func (h *httpModule) doRequest(L *lua.LState, method string, url string, options *lua.LTable) (*lua.LTable, error) {
+func (h *httpModule) doRequest(L *lua.LState, method string, url string, options *lua.LTable) (*lua.LUserData, error) {
 	req, err := http.NewRequest(strings.ToUpper(method), url, nil)
 	if err != nil {
 		return nil, err
@@ -170,34 +172,22 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 	}
 
 	res, err := h.client.Do(req)
+
 	if err != nil {
+		if res != nil {
+			io.Copy(ioutil.Discard, res.Body)
+			defer res.Body.Close()
+		}
+
 		return nil, err
 	}
 
-	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	headers := L.NewTable()
-	for key, _ := range res.Header {
-		headers.RawSetString(key, lua.LString(res.Header.Get(key)))
-	}
-
-	cookies := L.NewTable()
-	for _, cookie := range res.Cookies() {
-		cookies.RawSetString(cookie.Name, lua.LString(cookie.Value))
-	}
-
-	response := L.NewTable()
-	response.RawSetString("body", lua.LString(body))
-	response.RawSetString("headers", headers)
-	response.RawSetString("cookies", cookies)
-	response.RawSetString("status_code", lua.LNumber(res.StatusCode))
-	response.RawSetString("url", lua.LString(res.Request.URL.String()))
-
-	return response, nil
+	return newHttpResponse(res, &body, L), nil
 }
 
 func (h *httpModule) doRequestAndPush(L *lua.LState, method string, url string, options *lua.LTable) int {
