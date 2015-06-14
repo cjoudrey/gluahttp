@@ -296,6 +296,21 @@ func TestRequestCookies(t *testing.T) {
 		})
 
 		assert_equal('session_id=test', response["body"])
+		assert_equal(15, response["body_size"])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
+	}
+}
+
+func TestResponseBodySize(t *testing.T) {
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupServer(listener)
+
+	if err := evalLua(t, `
+		local http = require("http")
+		response, error = http.get("http://`+listener.Addr().String()+`/")
+
+		assert_equal(29, response["body_size"])
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
 	}

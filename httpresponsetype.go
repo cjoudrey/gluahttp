@@ -6,8 +6,9 @@ import "net/http"
 const luaHttpResponseTypeName = "http.response"
 
 type luaHttpResponse struct {
-	res  *http.Response
-	body lua.LString
+	res      *http.Response
+	body     lua.LString
+	bodySize int
 }
 
 func registerHttpResponseType(module *lua.LTable, L *lua.LState) {
@@ -17,11 +18,12 @@ func registerHttpResponseType(module *lua.LTable, L *lua.LState) {
 	L.SetField(module, "response", mt)
 }
 
-func newHttpResponse(res *http.Response, body *[]byte, L *lua.LState) *lua.LUserData {
+func newHttpResponse(res *http.Response, body *[]byte, bodySize int, L *lua.LState) *lua.LUserData {
 	ud := L.NewUserData()
 	ud.Value = &luaHttpResponse{
-		res:  res,
-		body: lua.LString(*body),
+		res:      res,
+		body:     lua.LString(*body),
+		bodySize: bodySize,
 	}
 	L.SetMetatable(ud, L.GetTypeMetatable(luaHttpResponseTypeName))
 	return ud
@@ -50,6 +52,8 @@ func httpResponseIndex(L *lua.LState) int {
 		return httpResponseUrl(res, L)
 	case "body":
 		return httpResponseBody(res, L)
+	case "body_size":
+		return httpResponseBodySize(res, L)
 	}
 
 	return 0
@@ -85,5 +89,10 @@ func httpResponseUrl(res *luaHttpResponse, L *lua.LState) int {
 
 func httpResponseBody(res *luaHttpResponse, L *lua.LState) int {
 	L.Push(&res.body)
+	return 1
+}
+
+func httpResponseBodySize(res *luaHttpResponse, L *lua.LState) int {
+	L.Push(lua.LNumber(res.bodySize))
 	return 1
 }

@@ -224,6 +224,7 @@ The `http.response` table contains information about a completed HTTP request.
 | Name        | Type   | Description |
 | ----------- | ------ | ----------- |
 | body        | String | The HTTP response body |
+| body_size   | Number | The size of the HTTP reponse body in bytes |
 | headers     | Table  | The HTTP response headers |
 | cookies     | Table  | The cookies sent by the server in the HTTP response |
 | status_code | Number | The HTTP response status code |

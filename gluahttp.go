@@ -182,12 +182,15 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 		return nil, err
 	}
 
+	// TODO: Add a way to discard body
+
 	body, err := ioutil.ReadAll(res.Body)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return newHttpResponse(res, &body, L), nil
+	return newHttpResponse(res, &body, len(body), L), nil
 }
 
 func (h *httpModule) doRequestAndPush(L *lua.LState, method string, url string, options *lua.LTable) int {
