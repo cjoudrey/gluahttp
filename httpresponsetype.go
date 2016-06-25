@@ -88,7 +88,7 @@ func httpResponseUrl(res *luaHttpResponse, L *lua.LState) int {
 }
 
 func httpResponseBody(res *luaHttpResponse, L *lua.LState) int {
-	L.Push(&res.body)
+	L.Push(res.body)
 	return 1
 }
 
