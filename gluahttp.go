@@ -165,8 +165,10 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 			break
 
 		case lua.LString:
+			body := reqForm.String()
+			req.ContentLength = int64(len(body))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			req.Body = ioutil.NopCloser(strings.NewReader(reqForm.String()))
+			req.Body = ioutil.NopCloser(strings.NewReader(body))
 			break
 		}
 	}

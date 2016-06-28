@@ -114,6 +114,7 @@ func TestRequestPostForm(t *testing.T) {
 		assert_equal(
 			'Requested POST / with query ""' ..
 			'Content-Type: application/x-www-form-urlencoded' ..
+			'Content-Length: 28' ..
 			'Body: username=bob&password=secret', response['body'])
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
@@ -135,6 +136,7 @@ func TestRequestHeaders(t *testing.T) {
 		assert_equal(
 			'Requested POST / with query ""' ..
 			'Content-Type: application/json' ..
+			'Content-Length: 0' ..
 			'Body: ', response['body'])
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
@@ -225,6 +227,7 @@ func TestPost(t *testing.T) {
 		assert_equal(
 			'Requested POST / with query ""' ..
 			'Content-Type: application/x-www-form-urlencoded' ..
+			'Content-Length: 28' ..
 			'Body: username=bob&password=secret', response['body'])
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
@@ -244,6 +247,7 @@ func TestPatch(t *testing.T) {
 		assert_equal(
 			'Requested PATCH / with query ""' ..
 			'Content-Type: application/x-www-form-urlencoded' ..
+			'Content-Length: 28' ..
 			'Body: username=bob&password=secret', response['body'])
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
@@ -263,6 +267,7 @@ func TestPut(t *testing.T) {
 		assert_equal(
 			'Requested PUT / with query ""' ..
 			'Content-Type: application/x-www-form-urlencoded' ..
+			'Content-Length: 28' ..
 			'Body: username=bob&password=secret', response['body'])
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
@@ -392,6 +397,7 @@ func setupServer(listener net.Listener) {
 		if req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT" {
 			body, _ := ioutil.ReadAll(req.Body)
 			fmt.Fprintf(w, "Content-Type: %s", req.Header.Get("Content-Type"))
+			fmt.Fprintf(w, "Content-Length: %s", req.Header.Get("Content-Length"))
 			fmt.Fprintf(w, "Body: %s", body)
 		}
 	})
