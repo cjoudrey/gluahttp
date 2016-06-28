@@ -7,6 +7,7 @@ import "net/http"
 import "net"
 import "fmt"
 import "net/http/cookiejar"
+import "strings"
 
 func TestRequestNoMethod(t *testing.T) {
 	if err := evalLua(t, `
@@ -14,7 +15,7 @@ func TestRequestNoMethod(t *testing.T) {
 		response, error = http.request()
 
 		assert_equal(nil, response)
-		assert_equal('unsupported protocol scheme ""', error)
+		assert_contains('unsupported protocol scheme ""', error)
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
 	}
@@ -26,7 +27,7 @@ func TestRequestNoUrl(t *testing.T) {
 		response, error = http.request("get")
 
 		assert_equal(nil, response)
-		assert_equal('Get : unsupported protocol scheme ""', error)
+		assert_contains('unsupported protocol scheme ""', error)
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
 	}
@@ -47,7 +48,7 @@ func TestRequestBatch(t *testing.T) {
 
 		assert_equal(nil, errors[1])
 		assert_equal(nil, errors[2])
-		assert_equal('Post : unsupported protocol scheme ""', errors[3])
+		assert_contains('unsupported protocol scheme ""', errors[3])
 		assert_equal('Request must be a table', errors[4])
 
 		assert_equal('Requested GET / with query "page=1"', responses[1]["body"])
@@ -364,6 +365,17 @@ func evalLua(t *testing.T, script string) error {
 
 		if expected.Type() != actual.Type() || expected.String() != actual.String() {
 			t.Errorf("Expected %s %q, got %s %q", expected.Type(), expected, actual.Type(), actual)
+		}
+
+		return 0
+	}))
+
+	L.SetGlobal("assert_contains", L.NewFunction(func(L *lua.LState) int {
+		contains := L.Get(1)
+		actual := L.Get(2)
+
+		if !strings.Contains(actual.String(), contains.String()) {
+			t.Errorf("Expected %s %q contains %s %q", actual.Type(), actual, contains.Type(), contains)
 		}
 
 		return 0
