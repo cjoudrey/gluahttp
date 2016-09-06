@@ -4,7 +4,6 @@ import "github.com/yuin/gopher-lua"
 import "net/http"
 import "fmt"
 import "errors"
-import "io"
 import "io/ioutil"
 import "strings"
 
@@ -176,13 +175,10 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 	res, err := h.client.Do(req)
 
 	if err != nil {
-		if res != nil {
-			io.Copy(ioutil.Discard, res.Body)
-			defer res.Body.Close()
-		}
-
 		return nil, err
 	}
+
+	defer res.Body.Close()
 
 	// TODO: Add a way to discard body
 
