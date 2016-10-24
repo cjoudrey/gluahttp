@@ -170,8 +170,19 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 			req.Body = ioutil.NopCloser(strings.NewReader(body))
 			break
 		}
-	}
 
+		switch reqJSONBody := options.RawGet(lua.LString("jsonBody")).(type) {
+		case *lua.LNilType:
+			break
+
+		case lua.LString:
+			body := reqJSONBody.String()
+			req.ContentLength = int64(len(body))
+			req.Header.Set("Content-Type", "application/json;charset=utf-8")
+			req.Body = ioutil.NopCloser(strings.NewReader(body))
+			break
+		}
+	}
 	res, err := h.client.Do(req)
 
 	if err != nil {
