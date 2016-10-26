@@ -152,6 +152,7 @@ func main() {
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
 | form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
+| jsonBody| String | jsonStr in http body |
 | headers | Table  | Additional headers to send with the request |
 
 **Returns**
