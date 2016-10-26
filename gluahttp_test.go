@@ -224,11 +224,41 @@ func TestPost(t *testing.T) {
 			form="username=bob&password=secret"
 		})
 
+		print(response['body'])
+
 		assert_equal(
 			'Requested POST / with query ""' ..
 			'Content-Type: application/x-www-form-urlencoded' ..
 			'Content-Length: 28' ..
 			'Body: username=bob&password=secret', response['body'])
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
+	}
+}
+
+func TestPostJSON(t *testing.T) {
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupServer(listener)
+
+	if err := evalLua(t, `
+		local http = require("http")
+		local jsonStr = "{\"username\":\"bob\",\"password\":\"secret\"}"
+		response, error = http.post("http://`+listener.Addr().String()+`", {
+				headers={
+            		Accept="application/json",
+            		Authorization="auth"
+        		},
+				jsonBody=jsonStr
+			})
+
+		print(type(response.body))
+		print(response['body'])
+
+		assert_equal(
+			'Requested POST / with query ""' ..
+			'Content-Type: application/json;charset=utf-8' ..
+			'Content-Length: 38' ..
+			'Body: {"username":"bob","password":"secret"}', response['body'])
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
 	}
