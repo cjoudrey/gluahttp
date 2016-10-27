@@ -138,12 +138,6 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 	}
 
 	if options != nil {
-		if reqHeaders, ok := options.RawGet(lua.LString("headers")).(*lua.LTable); ok {
-			reqHeaders.ForEach(func(key lua.LValue, value lua.LValue) {
-				req.Header.Set(key.String(), value.String())
-			})
-		}
-
 		if reqCookies, ok := options.RawGet(lua.LString("cookies")).(*lua.LTable); ok {
 			reqCookies.ForEach(func(key lua.LValue, value lua.LValue) {
 				req.AddCookie(&http.Cookie{Name: key.String(), Value: value.String()})
@@ -151,24 +145,33 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 		}
 
 		switch reqQuery := options.RawGet(lua.LString("query")).(type) {
-		case *lua.LNilType:
-			break
-
 		case lua.LString:
 			req.URL.RawQuery = reqQuery.String()
-			break
 		}
 
-		switch reqForm := options.RawGet(lua.LString("form")).(type) {
-		case *lua.LNilType:
-			break
+		body := options.RawGet(lua.LString("body"))
+		if _, ok := body.(lua.LString); !ok {
+			// "form" is deprecated.
+			body = options.RawGet(lua.LString("form"))
+			// Only set the Content-Type to application/x-www-form-urlencoded
+			// when someone uses "form", not for "body".
+			if _, ok := body.(lua.LString); ok {
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			}
+		}
 
+		switch reqBody := body.(type) {
 		case lua.LString:
-			body := reqForm.String()
+			body := reqBody.String()
 			req.ContentLength = int64(len(body))
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			req.Body = ioutil.NopCloser(strings.NewReader(body))
-			break
+		}
+
+		// Set these last. That way the code above doesn't overwrite them.
+		if reqHeaders, ok := options.RawGet(lua.LString("headers")).(*lua.LTable); ok {
+			reqHeaders.ForEach(func(key lua.LValue, value lua.LValue) {
+				req.Header.Set(key.String(), value.String())
+			})
 		}
 	}
 
@@ -179,9 +182,6 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 	}
 
 	defer res.Body.Close()
-
-	// TODO: Add a way to discard body
-
 	body, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {

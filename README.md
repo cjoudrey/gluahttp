@@ -129,7 +129,8 @@ func main() {
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
-| form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
+| body    | String | Request body. |
+| form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
 
 **Returns**
@@ -151,7 +152,8 @@ func main() {
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
-| form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
+| body    | String | Request body. |
+| form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
 
 **Returns**
@@ -173,7 +175,8 @@ func main() {
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
-| form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
+| body    | String | Request body. |
+| form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
 
 **Returns**
@@ -196,7 +199,8 @@ func main() {
 | ------- | ------ | ----------- |
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
-| form    | String | URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
+| body    | String | Request body. |
+| form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
 
 **Returns**
