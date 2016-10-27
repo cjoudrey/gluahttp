@@ -221,12 +221,12 @@ func TestPost(t *testing.T) {
 	if err := evalLua(t, `
 		local http = require("http")
 		response, error = http.post("http://`+listener.Addr().String()+`", {
-			form="username=bob&password=secret"
+			body="username=bob&password=secret"
 		})
 
 		assert_equal(
 			'Requested POST / with query ""' ..
-			'Content-Type: application/x-www-form-urlencoded' ..
+			'Content-Type: ' ..
 			'Content-Length: 28' ..
 			'Body: username=bob&password=secret', response['body'])
 	`); err != nil {
@@ -241,14 +241,17 @@ func TestPatch(t *testing.T) {
 	if err := evalLua(t, `
 		local http = require("http")
 		response, error = http.patch("http://`+listener.Addr().String()+`", {
-			form="username=bob&password=secret"
+			body='{"username":"bob"}',
+			headers={
+				["Content-Type"]="application/json"
+			}
 		})
 
 		assert_equal(
 			'Requested PATCH / with query ""' ..
-			'Content-Type: application/x-www-form-urlencoded' ..
-			'Content-Length: 28' ..
-			'Body: username=bob&password=secret', response['body'])
+			'Content-Type: application/json' ..
+			'Content-Length: 18' ..
+			'Body: {"username":"bob"}', response['body'])
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
 	}
@@ -261,7 +264,10 @@ func TestPut(t *testing.T) {
 	if err := evalLua(t, `
 		local http = require("http")
 		response, error = http.put("http://`+listener.Addr().String()+`", {
-			form="username=bob&password=secret"
+			body="username=bob&password=secret",
+			headers={
+				["Content-Type"]="application/x-www-form-urlencoded"
+			}
 		})
 
 		assert_equal(
