@@ -67,6 +67,7 @@ func main() {
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number | request timeout |
 
 **Returns**
 
@@ -88,6 +89,7 @@ func main() {
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number | request timeout |
 
 **Returns**
 
