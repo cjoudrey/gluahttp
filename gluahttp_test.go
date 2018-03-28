@@ -46,10 +46,18 @@ func TestRequestBatch(t *testing.T) {
 			1
 		})
 
-		assert_equal(nil, errors[1])
-		assert_equal(nil, errors[2])
-		assert_contains('unsupported protocol scheme ""', errors[3])
-		assert_equal('Request must be a table', errors[4])
+		-- the requests are send asynchronously, so the errors might not be in the same order
+		-- if we don't sort, the test will be flaky
+		local errorStrings = {}
+		for _, err in pairs(errors) do
+			table.insert(errorStrings, tostring(err))
+		end
+		table.sort(errorStrings)
+
+		assert_contains('Post : unsupported protocol scheme ""', errorStrings[1])
+		assert_equal('Request must be a table', errorStrings[2])
+		assert_equal(nil, errorStrings[3])
+		assert_equal(nil, errorStrings[4])
 
 		assert_equal('Requested GET / with query "page=1"', responses[1]["body"])
 		assert_equal('Cookie set!', responses[2]["body"])
