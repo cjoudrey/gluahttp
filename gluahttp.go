@@ -8,8 +8,6 @@ import "io/ioutil"
 import "strings"
 
 type httpModule struct {
-	client *http.Client
-
 	do func(req *http.Request) (*http.Response, error)
 }
 
@@ -17,7 +15,7 @@ type empty struct{}
 
 func NewHttpModule(client *http.Client) *httpModule {
 	return &httpModule{
-		client: client,
+		do: client.Do,
 	}
 }
 
@@ -183,14 +181,7 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 		}
 	}
 
-	var res *http.Response
-
-	if h.do != nil {
-		res, err = h.do(req)
-	} else {
-		res, err = h.client.Do(req)
-	}
-
+	res, err := h.do(req)
 	if err != nil {
 		return nil, err
 	}
