@@ -141,6 +141,10 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 		return nil, err
 	}
 
+	if ctx := L.Context(); ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
 	if options != nil {
 		if reqCookies, ok := options.RawGet(lua.LString("cookies")).(*lua.LTable); ok {
 			reqCookies.ForEach(func(key lua.LValue, value lua.LValue) {
