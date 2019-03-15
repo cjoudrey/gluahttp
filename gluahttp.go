@@ -6,6 +6,7 @@ import "fmt"
 import "errors"
 import "io/ioutil"
 import "strings"
+import "time"
 
 type httpModule struct {
 	do func(req *http.Request) (*http.Response, error)
@@ -180,6 +181,11 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 			reqHeaders.ForEach(func(key lua.LValue, value lua.LValue) {
 				req.Header.Set(key.String(), value.String())
 			})
+		}
+		// set http connection timeout
+		switch timeout := options.RawGet(lua.LString("timeout")).(type) {
+		case lua.LNumber:
+			h.client.Timeout = time.Duration(timeout) * time.Second
 		}
 	}
 

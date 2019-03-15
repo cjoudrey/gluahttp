@@ -67,6 +67,7 @@ func main() {
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number | request timeout |
 
 **Returns**
 
@@ -88,6 +89,7 @@ func main() {
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number | request timeout |
 
 **Returns**
 
@@ -109,6 +111,7 @@ func main() {
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number | request timeout |
 
 **Returns**
 
@@ -132,6 +135,7 @@ func main() {
 | body    | String | Request body. |
 | form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number | request timeout |
 
 **Returns**
 
@@ -155,6 +159,7 @@ func main() {
 | body    | String | Request body. |
 | form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number | request timeout |
 
 **Returns**
 
@@ -178,6 +183,7 @@ func main() {
 | body    | String | Request body. |
 | form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number | request timeout |
 
 **Returns**
 
@@ -202,6 +208,7 @@ func main() {
 | body    | String | Request body. |
 | form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number | request timeout |
 
 **Returns**
 
@@ -233,3 +240,4 @@ The `http.response` table contains information about a completed HTTP request.
 | cookies     | Table  | The cookies sent by the server in the HTTP response |
 | status_code | Number | The HTTP response status code |
 | url         | String | The final URL the request ended pointing to after redirects |
+| timeout     | Number | request timeout |
