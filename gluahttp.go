@@ -189,7 +189,7 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 				duration, err = time.ParseDuration(string(reqTimeout.(lua.LString)))
 			}
 			ctx, cancel := context.WithTimeout(req.Context(), duration)
-			req = req.Clone(ctx)
+			req = req.WithContext(ctx)
 			defer cancel()
 		}
 
