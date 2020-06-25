@@ -2,14 +2,14 @@ package gluahttp
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/yuin/gopher-lua"
+	"io/ioutil"
+	"net/http"
+	"strings"
 	"time"
 )
-import "net/http"
-import "fmt"
-import "errors"
-import "io/ioutil"
-import "strings"
 
 type httpModule struct {
 	do func(req *http.Request) (*http.Response, error)
@@ -187,6 +187,9 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 				duration = time.Second * time.Duration(int(reqTimeout.(lua.LNumber)))
 			case lua.LString:
 				duration, err = time.ParseDuration(string(reqTimeout.(lua.LString)))
+				if err != nil {
+					return nil, err
+				}
 			}
 			ctx, cancel := context.WithTimeout(req.Context(), duration)
 			req = req.WithContext(ctx)

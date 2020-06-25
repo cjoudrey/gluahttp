@@ -1,16 +1,16 @@
 package gluahttp
 
 import (
+	"fmt"
 	"github.com/yuin/gopher-lua"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"net/http/cookiejar"
+	"strings"
+	"testing"
 	"time"
 )
-import "testing"
-import "io/ioutil"
-import "net/http"
-import "net"
-import "fmt"
-import "net/http/cookiejar"
-import "strings"
 
 func TestRequestNoMethod(t *testing.T) {
 	if err := evalLua(t, `
@@ -395,6 +395,21 @@ func TestTimeoutLong(t *testing.T) {
 			timeout="1h"
 		})
 		assert_contains('ok', response.body)
+	`); err != nil {
+		t.Errorf("Failed to evaluate script: %s", err)
+	}
+}
+
+func TestBadlyFormattedTimeout(t *testing.T) {
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	setupServer(listener)
+	if err := evalLua(t, `
+		local http = require("http")
+
+		response, error = http.get("http://`+listener.Addr().String()+`/delayed", {
+			timeout="not a duration"
+		})
+		assert_contains('invalid duration', error)
 	`); err != nil {
 		t.Errorf("Failed to evaluate script: %s", err)
 	}
