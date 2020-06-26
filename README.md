@@ -27,7 +27,8 @@ func main() {
         local http = require("http")
 
         response, error_message = http.request("GET", "http://example.com", {
-            query="page=1"
+            query="page=1",
+            timeout="30s",
             headers={
                 Accept="*/*"
             }
@@ -67,6 +68,7 @@ func main() {
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number/String | Request timeout. Number of seconds or String such as "1h" |
 
 **Returns**
 
@@ -88,6 +90,7 @@ func main() {
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number/String | Request timeout. Number of seconds or String such as "1h" |
 
 **Returns**
 
@@ -109,6 +112,7 @@ func main() {
 | query   | String | URL encoded query params |
 | cookies | Table  | Additional cookies to send with the request |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number/String | Request timeout. Number of seconds or String such as "1h" |
 
 **Returns**
 
@@ -132,6 +136,7 @@ func main() {
 | body    | String | Request body. |
 | form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number/String | Request timeout. Number of seconds or String such as "1h" |
 
 **Returns**
 
@@ -155,6 +160,7 @@ func main() {
 | body    | String | Request body. |
 | form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number/String | Request timeout. Number of seconds or String such as "1h" |
 
 **Returns**
 
@@ -178,6 +184,7 @@ func main() {
 | body    | String | Request body. |
 | form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number/String | Request timeout. Number of seconds or String such as "1h" |
 
 **Returns**
 
@@ -202,6 +209,7 @@ func main() {
 | body    | String | Request body. |
 | form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
+| timeout | Number/String | Request timeout. Number of seconds or String such as "1h" |
 
 **Returns**
 
