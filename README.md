@@ -210,6 +210,7 @@ func main() {
 | form    | String | Deprecated. URL encoded request body. This will also set the `Content-Type` header to `application/x-www-form-urlencoded` |
 | headers | Table  | Additional headers to send with the request |
 | timeout | Number/String | Request timeout. Number of seconds or String such as "1h" |
+| auth    | Table  | Basic auth for request. Set user and pass keys. |
 
 **Returns**
 
