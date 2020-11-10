@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/yuin/gopher-lua"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -194,6 +193,17 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 			ctx, cancel := context.WithTimeout(req.Context(), duration)
 			req = req.WithContext(ctx)
 			defer cancel()
+		}
+
+		// Basic auth
+		if reqAuth, ok := options.RawGet(lua.LString("auth")).(*lua.LTable); ok {
+			user := reqAuth.RawGetString("user")
+			pass := reqAuth.RawGetString("pass")
+			if !lua.LVIsFalse(user) && !lua.LVIsFalse(pass) {
+				req.SetBasicAuth(user.String(), pass.String())
+			} else {
+				return nil, fmt.Errorf("auth table must contain no nil user and pass fields")
+			}
 		}
 
 		// Set these last. That way the code above doesn't overwrite them.
