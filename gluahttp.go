@@ -196,6 +196,17 @@ func (h *httpModule) doRequest(L *lua.LState, method string, url string, options
 			defer cancel()
 		}
 
+		// Basic auth
+		if reqAuth, ok := options.RawGet(lua.LString("auth")).(*lua.LTable); ok {
+			user := reqAuth.RawGetString("user")
+			pass := reqAuth.RawGetString("pass")
+			if !lua.LVIsFalse(user) && !lua.LVIsFalse(pass) {
+				req.SetBasicAuth(user.String(), pass.String())
+			} else {
+				return nil, fmt.Errorf("auth table must contain no nil user and pass fields")
+			}
+		}
+
 		// Set these last. That way the code above doesn't overwrite them.
 		if reqHeaders, ok := options.RawGet(lua.LString("headers")).(*lua.LTable); ok {
 			reqHeaders.ForEach(func(key lua.LValue, value lua.LValue) {
